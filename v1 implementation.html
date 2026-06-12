@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[wall]</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --white: #ffffff;
+    --black: #0a0a0a;
+    --gray: #888;
+    --light-gray: #e0e0e0;
+  }
+
+  body {
+    background: var(--white);
+    color: var(--black);
+    font-family: 'Georgia', serif;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── SETUP SCREEN ── */
+  #setup {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+    background: var(--white);
+    transition: opacity 0.8s ease;
+    z-index: 10;
+  }
+
+  #setup.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .logo {
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    color: var(--gray);
+    font-family: 'Courier New', monospace;
+  }
+
+  .logo span {
+    color: var(--black);
+    font-weight: 600;
+  }
+
+  .timer-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .timer-label {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gray);
+    font-family: 'Courier New', monospace;
+  }
+
+  .duration-select {
+    display: flex;
+    gap: 12px;
+  }
+
+  .dur-btn {
+    width: 56px;
+    height: 56px;
+    border: 1px solid var(--light-gray);
+    background: none;
+    border-radius: 50%;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    color: var(--gray);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .dur-btn:hover {
+    border-color: var(--black);
+    color: var(--black);
+  }
+
+  .dur-btn.active {
+    border-color: var(--black);
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .begin-btn {
+    margin-top: 8px;
+    padding: 14px 48px;
+    background: var(--black);
+    color: var(--white);
+    border: none;
+    border-radius: 2px;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .begin-btn:hover { opacity: 0.7; }
+
+  /* ── FOCUS SCREEN ── */
+  #focus {
+    position: fixed;
+    inset: 0;
+    background: var(--white);
+    display: none;
+  }
+
+  #dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--black);
+    transform: translate(-50%, -50%);
+    will-change: left, top;
+  }
+
+  /* countdown corner */
+  #countdown {
+    position: fixed;
+    bottom: 32px;
+    right: 36px;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    color: var(--light-gray);
+    letter-spacing: 0.15em;
+    transition: color 0.5s;
+    z-index: 5;
+  }
+
+  #countdown:hover { color: var(--gray); }
+
+  /* ── END SCREEN ── */
+  #end {
+    position: fixed;
+    inset: 0;
+    background: var(--white);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+
+  #end.visible { opacity: 1; }
+
+  .end-quote {
+    font-size: clamp(18px, 3vw, 28px);
+    font-family: 'Georgia', serif;
+    font-style: italic;
+    color: var(--black);
+    text-align: center;
+    line-height: 1.6;
+    max-width: 520px;
+    padding: 0 2rem;
+  }
+
+  .end-brand {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--gray);
+    font-family: 'Courier New', monospace;
+    margin-top: 8px;
+  }
+
+  .end-again {
+    margin-top: 32px;
+    background: none;
+    border: none;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--light-gray);
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .end-again:hover { color: var(--black); }
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup">
+  <div class="logo">[<span>wall</span>]</div>
+
+  <div class="timer-section">
+    <div class="timer-label">set your time</div>
+    <div class="duration-select">
+      <button class="dur-btn" data-min="5">5</button>
+      <button class="dur-btn active" data-min="10">10</button>
+      <button class="dur-btn" data-min="25">25</button>
+      <button class="dur-btn" data-min="45">45</button>
+    </div>
+  </div>
+
+  <button class="begin-btn" id="begin-btn">begin</button>
+</div>
+
+<!-- FOCUS -->
+<div id="focus">
+  <div id="dot"></div>
+</div>
+<div id="countdown">--:--</div>
+
+<!-- END -->
+<div id="end">
+  <div class="end-quote">Do wonders, in this distracted world…</div>
+  <div class="end-brand">[wall] v1</div>
+  <button class="end-again" id="again-btn">go again</button>
+</div>
+
+<!-- white noise via AudioContext -->
+<script>
+(function () {
+  const setup   = document.getElementById('setup');
+  const focus   = document.getElementById('focus');
+  const end     = document.getElementById('end');
+  const dot     = document.getElementById('dot');
+  const cdEl    = document.getElementById('countdown');
+  const beginBtn = document.getElementById('begin-btn');
+  const againBtn = document.getElementById('again-btn');
+  const durBtns  = document.querySelectorAll('.dur-btn');
+
+  let selectedMin = 10;
+  let timerInterval = null;
+  let animFrame    = null;
+  let audioCtx     = null;
+  let noiseNode    = null;
+  let gainNode     = null;
+
+  // duration selection
+  durBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      durBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedMin = parseInt(btn.dataset.min);
+    });
+  });
+
+  // ── white noise ──
+  function startNoise() {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const bufferSize = audioCtx.sampleRate * 2;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+    noiseNode = audioCtx.createBufferSource();
+    noiseNode.buffer = buffer;
+    noiseNode.loop = true;
+
+    // gentle low-pass so it's a soft hiss, not harsh
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 800;
+
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = 0;
+
+    noiseNode.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    noiseNode.start();
+
+    // fade in over 2s
+    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 2);
+  }
+
+  function stopNoise(cb) {
+    if (!gainNode || !audioCtx) { if (cb) cb(); return; }
+    gainNode.gain.setValueAtTime(gainNode.gain.value, audioCtx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.5);
+    setTimeout(() => {
+      try { noiseNode.stop(); audioCtx.close(); } catch(e){}
+      if (cb) cb();
+    }, 1600);
+  }
+
+  // ── dot path (smooth organic glide) ──
+  let dotX = 50, dotY = 50;
+  let targetX = 50, targetY = 50;
+  let wanderTimer = 0;
+  const WANDER_INTERVAL = 3000; // pick new target every ~3s
+  let lastTime = null;
+
+  function pickTarget() {
+    const margin = 12; // % from edge
+    targetX = margin + Math.random() * (100 - margin * 2);
+    targetY = margin + Math.random() * (100 - margin * 2);
+  }
+
+  function animateDot(ts) {
+    if (!lastTime) lastTime = ts;
+    const dt = ts - lastTime;
+    lastTime = ts;
+
+    wanderTimer += dt;
+    if (wanderTimer > WANDER_INTERVAL) {
+      pickTarget();
+      wanderTimer = 0;
+    }
+
+    // ease toward target
+    const speed = 0.0015;
+    dotX += (targetX - dotX) * speed * dt;
+    dotY += (targetY - dotY) * speed * dt;
+
+    dot.style.left = dotX + 'vw';
+    dot.style.top  = dotY + 'vh';
+
+    animFrame = requestAnimationFrame(animateDot);
+  }
+
+  // ── timer ──
+  function startTimer(seconds) {
+    let remaining = seconds;
+    updateCountdown(remaining);
+
+    timerInterval = setInterval(() => {
+      remaining--;
+      updateCountdown(remaining);
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        endSession();
+      }
+    }, 1000);
+  }
+
+  function updateCountdown(s) {
+    const m = Math.floor(s / 60).toString().padStart(2, '0');
+    const sec = (s % 60).toString().padStart(2, '0');
+    cdEl.textContent = m + ':' + sec;
+  }
+
+  // ── begin ──
+  beginBtn.addEventListener('click', () => {
+    setup.classList.add('fade-out');
+
+    setTimeout(() => {
+      setup.style.display = 'none';
+      focus.style.display = 'block';
+      cdEl.style.display  = 'block';
+
+      pickTarget();
+      dotX = targetX; dotY = targetY;
+      lastTime = null;
+      wanderTimer = 0;
+      animFrame = requestAnimationFrame(animateDot);
+
+      startNoise();
+      startTimer(selectedMin * 60);
+    }, 900);
+  });
+
+  // ── end session ──
+  function endSession() {
+    cancelAnimationFrame(animFrame);
+    cdEl.style.display = 'none';
+
+    stopNoise(() => {
+      focus.style.display = 'none';
+      end.style.display   = 'flex';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => end.classList.add('visible'));
+      });
+    });
+  }
+
+  // ── go again ──
+  againBtn.addEventListener('click', () => {
+    end.classList.remove('visible');
+    setTimeout(() => {
+      end.style.display = 'none';
+      setup.style.display = 'flex';
+      setup.style.opacity = '1';
+      setup.classList.remove('fade-out');
+      timerInterval && clearInterval(timerInterval);
+    }, 600);
+  });
+})();
+</script>
+</body>
+</html>
